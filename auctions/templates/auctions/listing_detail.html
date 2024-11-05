@@ -1,0 +1,70 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<h2>{{ auction.title }}</h2>
+<p>{{ auction.description }}</p>
+<p>Prix de départ: {{ auction.starting_bid }}</p>
+<p>Prix actuel: {{ current_price }}</p>
+
+{% if auction.image_url %}
+    <img src="{{ auction.image_url }}" alt="{{ auction.title }}" style="width: 300px;">
+{% endif %}
+
+{% if auction.active %}
+    <p>Status: Active</p>
+{% else %}
+    <p>Status: Fermée</p>
+    {% if request.user == auction.owner %}
+        <p>Vous avez remporté cette enchère !</p>
+    {% endif %}
+{% endif %}
+
+{% if user.is_authenticated %}
+    {% if auction.active %}
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="watchlist" value="toggle">
+                {% if is_in_watchlist %}
+                    Retirer de la
+                {% else %}
+                    Ajouter à la
+                {% endif %}
+                Watchlist
+            </button>
+        </form>
+    {% endif %}
+
+    {% if auction.active %}
+        <h3>Placer une enchère</h3>
+        <form method="post">
+            {% csrf_token %}
+            {{ bid_form.as_p }}
+            <button type="submit" name="bid">Placer une enchère</button>
+        </form>
+    {% endif %}
+{% endif %}
+
+{% if user == auction.owner and auction.active %}
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" name="close_auction">Fermer l'enchère</button>
+    </form>
+{% endif %}
+
+<h3>Commentaires</h3>
+{% for comment in comments %}
+    <p><strong>{{ comment.commenter.username }}</strong>: {{ comment.comment_text }} ({{ comment.comment_time }})</p>
+{% empty %}
+    <p>Aucun commentaire pour le moment.</p>
+{% endfor %}
+
+{% if user.is_authenticated %}
+    <h3>Ajouter un commentaire</h3>
+    <form method="post">
+        {% csrf_token %}
+        {{ comment_form.as_p }}
+        <button type="submit" name="comment">Ajouter un commentaire</button>
+    </form>
+{% endif %}
+
+{% endblock %}

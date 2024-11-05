@@ -1,0 +1,23 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+<h2>Ma Watchlist</h2>
+
+{% if watchlist_items %}
+    <ul>
+        {% for item in watchlist_items %}
+            <li>
+                <a href="{% url 'listing_detail' item.auction.id %}">{{ item.auction.title }}</a>
+                <form action="{% url 'watchlist_view' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" name="remove_auction" value="{{ item.auction.id }}">Retirer de la Watchlist</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Votre Watchlist est vide.</p>
+{% endif %}
+
+<a href="{% url 'active_listings' %}">Retour à l'accueil</a>
+{% endblock %}
