@@ -1,0 +1,27 @@
+<h2>Filtrer les enchères par catégorie</h2>
+
+<!-- Formulaire pour la liste déroulante -->
+<form method="get">
+    <label for="category">Choisissez une catégorie :</label>
+    <select name="category" id="category" onchange="this.form.submit()">
+        <option value="">Toutes les catégories</option>
+        {% for category in categories %}
+            <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>
+                {{ category }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+<!-- Affichage des enchères filtrées -->
+<h3>Résultats :</h3>
+<ul>
+    {% for listing in listings %}
+        <li>
+            <a href="{% url 'listing_detail' listing.id %}">{{ listing.title }}</a>
+            (Catégorie : {{ listing.category }})
+        </li>
+    {% empty %}
+        <p>Aucune enchère trouvée pour cette catégorie.</p>
+    {% endfor %}
+</ul>
