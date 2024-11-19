@@ -105,13 +105,13 @@ def listing_detail(request, listing_id):
         bid_form = BidForm(request.POST)
         if bid_form.is_valid():
             bid_amount = bid_form.cleaned_data['bid_amount']
-            if bid_amount >= current_price:
+            if bid_amount > current_price:
                 Bid.objects.create(auction=auction, bidder=request.user, bid_amount=bid_amount)
                 auction.current_bid = bid_amount
                 auction.save()
                 messages.success(request, "Votre enchère a été placée.")
             else:
-                messages.error(request, "L'enchère doit être supérieure ou égale au prix actuel.")
+                messages.error(request, "L'enchère doit être supérieure au prix actuel")
             return redirect('listing_detail', listing_id=listing_id)
 
     # Ajout de commentaire

@@ -35,6 +35,16 @@
     {% endif %}
 
     {% if auction.active %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                    <li class="{% if message.tags %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
         <h3>Placer une enchère</h3>
         <form method="post">
             {% csrf_token %}
