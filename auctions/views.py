@@ -1,14 +1,13 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
 from django.contrib import messages
 from django.urls import reverse
 from .models import User
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .forms import AuctionListingForm,BidForm,CommentForm
-from .models import AuctionListing, Bid,Comment,Watchlist
+from .models import AuctionListing, Bid,Comment,Watchlist,Category
 
 
 def index(request):
@@ -89,8 +88,7 @@ def active_listings(request):
 
 def listing_detail(request, listing_id):
     auction = get_object_or_404(AuctionListing, id=listing_id)
-    is_in_watchlist = request.user.is_authenticated and Watchlist.objects.filter(user=request.user,
-                                                                                 auction=auction).exists()
+    is_in_watchlist = request.user.is_authenticated and Watchlist.objects.filter(user=request.user, auction=auction).exists()
     current_price = auction.current_bid or auction.starting_bid
     comments = auction.comments.all()
 
@@ -120,15 +118,20 @@ def listing_detail(request, listing_id):
     if request.method == "POST" and 'comment' in request.POST:
         comment_form = CommentForm(request.POST)
         if comment_form.is_valid():
-            Comment.objects.create(auction=auction, commenter=request.user,
-                                   comment_text=comment_form.cleaned_data['comment_text'])
+            Comment.objects.create(auction=auction, commenter=request.user, comment_text=comment_form.cleaned_data['comment_text'])
             return redirect('listing_detail', listing_id=listing_id)
 
     # Fermer l'enchère si c'est le propriétaire
-    if request.user == auction.owner and 'close_auction' in request.POST:
+    if request.method == "POST" and request.user == auction.owner and 'close_auction' in request.POST:
+        highest_bid = auction.bids.order_by('-bid_amount').first()
+        if highest_bid:
+            auction.winner = highest_bid.bidder  # Définit le gagnant de l'enchère
+            messages.success(request, f"L'enchère est fermée ! {highest_bid.bidder.username} a remporté l'enchère.")
+        else:
+            messages.info(request, "L'enchère a été fermée sans gagnant.")
+
         auction.active = False
         auction.save()
-        messages.success(request, "L'enchère est fermée.")
         return redirect('listing_detail', listing_id=listing_id)
 
     bid_form = BidForm()
@@ -143,7 +146,6 @@ def listing_detail(request, listing_id):
         "comments": comments,
     })
 
-
 @login_required
 def watchlist_view(request):
     # Récupère toutes les annonces de la Watchlist de l'utilisateur
@@ -157,4 +159,21 @@ def watchlist_view(request):
 
     return render(request, "auctions/watchlist.html", {
         "watchlist_items": watchlist_items
+    })
+
+
+def filter_by_category(request):
+    # Récupérer toutes les catégories uniques déjà saisies par les utilisateurs
+    categories = AuctionListing.objects.values_list('category', flat=True).distinct().exclude(category=None)
+
+    selected_category = request.GET.get('category', None)  # Catégorie sélectionnée par l'utilisateur
+    listings = AuctionListing.objects.filter(active=True)  # Filtrer les enchères actives par défaut
+
+    if selected_category:
+        listings = listings.filter(category=selected_category)  # Filtrer par catégorie sélectionnée
+
+    return render(request, "auctions/filter_by_category.html", {
+        "categories": categories,
+        "listings": listings,
+        "selected_category": selected_category,
     })

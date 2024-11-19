@@ -10,12 +10,12 @@
     <img src="{{ auction.image_url }}" alt="{{ auction.title }}" style="width: 300px;">
 {% endif %}
 
-{% if auction.active %}
-    <p>Status: Active</p>
-{% else %}
-    <p>Status: Fermée</p>
-    {% if request.user == auction.owner %}
-        <p>Vous avez remporté cette enchère !</p>
+{% if not auction.active %}
+    <p>Status : Fermée</p>
+    {% if auction.winner == user %}
+        <p>Félicitations ! Vous avez remporté cette enchère.</p>
+    {% elif auction.winner %}
+        <p>L'enchère a été remportée par {{ auction.winner.username }}.</p>
     {% endif %}
 {% endif %}
 
@@ -50,6 +50,7 @@
         <button type="submit" name="close_auction">Fermer l'enchère</button>
     </form>
 {% endif %}
+
 
 <h3>Commentaires</h3>
 {% for comment in comments %}
